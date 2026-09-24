@@ -3723,3 +3723,39 @@ def test_namespace_pagefile_label(py_recipe, jinja_env):
         "namespace-profile-8cpu-on-linux-64;container.privileged=true;container.mount-scratch=true"
         in labels
     )
+
+
+def test_rattler_build_passes_channel_priority(py_recipe, jinja_env):
+    """v1 (rattler-build) feedstocks must pass channel_priority to ``rattler-build build``.
+
+    rattler-build uses its own resolver and does not read conda's condarc, so the
+    ``conda config --env --set channel_priority`` translation that conda-build relies
+    on (in conda-forge-ci-setup) has no effect on a v1 recipe. Unless conda-smithy
+    passes the value explicitly as ``--channel-priority`` on the ``rattler-build build``
+    command, a maintainer's ``channel_priority`` setting in conda-forge.yml is silently
+    ignored on v1 recipes. This asserts the generated build script actually carries it.
+    """
+    if py_recipe.config.get("conda_build_tool") != "rattler-build":
+        pytest.skip(
+            "channel_priority passthrough only concerns rattler-build (v1 recipes)"
+        )
+
+    config = copy.deepcopy(py_recipe.config)
+    config["channel_priority"] = "disabled"
+    config["provider"]["linux_64"] = "github_actions"
+
+    configure_feedstock.render_github_actions(
+        jinja_env=jinja_env,
+        forge_config=config,
+        forge_dir=py_recipe.recipe,
+    )
+
+    build_steps = Path(
+        py_recipe.recipe, ".scripts", "build_steps.sh"
+    ).read_text()
+
+    assert "rattler-build build" in build_steps
+    assert "--channel-priority disabled" in build_steps, (
+        "the rattler-build invocation does not carry channel_priority from "
+        "conda-forge.yml; the setting is silently ignored on v1 recipes"
+    )
