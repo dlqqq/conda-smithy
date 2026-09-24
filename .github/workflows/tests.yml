@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - capture-channel-priority-v1-recipe-issue
+      - fix-channel-priority-v1-recipe-issue
   pull_request: null
 
 concurrency:
