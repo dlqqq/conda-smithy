@@ -187,6 +187,7 @@ else
         --recipe "${RECIPE_ROOT}" \
         -m "${CI_SUPPORT}/${CONFIG}.yaml" \
         ${EXTRA_CB_OPTIONS:-} \
+        --channel-priority {{ "disabled" if channel_priority in ["disabled", "flexible"] else "strict" }} \
         --build-platform "${BUILD_PLATFORM}" \
         --target-platform "${HOST_PLATFORM}" \
         --extra-meta flow_run_id="${flow_run_id:-}" \
